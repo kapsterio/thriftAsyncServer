@@ -52,7 +52,7 @@ public class Server {
         //ExecutorService executorService = Executors.newCachedThreadPool();
         //多线程半同步半异步
         TThreadedSelectorServer.Args tArgs = new TThreadedSelectorServer.Args(serverTransport);
-        tArgs.selectorThreads(4).executorService(executorService)
+        tArgs.selectorThreads(4).workerThreads(8)
                 .acceptQueueSizePerThread(50)
                 .acceptPolicy(TThreadedSelectorServer.Args.AcceptPolicy.FAST_ACCEPT);
         tArgs.processor(tprocessor);

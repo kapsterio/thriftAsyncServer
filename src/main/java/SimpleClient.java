@@ -27,7 +27,7 @@ public class SimpleClient {
 
     //基于连接池的多线程同步client
     public static void main(String[] args) throws Exception{
-        List<ServiceInfo> serviceList = Arrays.asList(new ServiceInfo("127.0.0.1", 8420));
+        List<ServiceInfo> serviceList = Arrays.asList(new ServiceInfo("127.0.0.1", 8419));
 
 
         PoolConfig config = new PoolConfig();
@@ -41,7 +41,7 @@ public class SimpleClient {
                 transport -> new TestAsync.Client(new TBinaryProtocol(new TFramedTransport(transport))), // ❶
                 config);
         ExecutorService executor = Executors.newFixedThreadPool(100);
-        int num = 10000;
+        int num = 100000;
         CountDownLatch latch = new CountDownLatch(num);
         Map<Integer, Long> allTimes = Maps.newConcurrentMap();
         AtomicInteger errorCount = new AtomicInteger(0);
