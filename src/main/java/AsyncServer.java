@@ -5,19 +5,24 @@ import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
+import org.apache.http.pool.PoolStats;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /*
   Created by zhangheng on 10/21/16.
  */
 public class AsyncServer {
+    static Logger log = LoggerFactory.getLogger("Tmonitor");
     public static void main(String[] args) throws Exception{
         RequestConfig requestConfig = RequestConfig.custom()
                 .setSocketTimeout(3000)
@@ -33,21 +38,40 @@ public class AsyncServer {
         // Create a custom I/O reactort
         ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
-        cm.setMaxTotal(200);
-        cm.setDefaultMaxPerRoute(200);
+        cm.setMaxTotal(128);
+        cm.setDefaultMaxPerRoute(128);
+
         CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
                 .setDefaultRequestConfig(requestConfig)
                 .setConnectionManager(cm)
                 .build();
 
-        TestAsyncServiceImpl service = new TestAsyncServiceImpl(httpclient);
+        Thread monitor = new Thread( () -> {
+            while (true) {
+                PoolStats ps = cm.getTotalStats();
+                log.info("available: {}", ps.getAvailable());
+                log.info("leased: {}" , ps.getLeased());
+                log.info("pending: {}" , ps.getPending());
+                log.info("max: {}" ,ps.getMax());
+                try {
+                    Thread.sleep(10);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+        monitor.setDaemon(true);
+        monitor.start();
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        TestAsyncServiceImpl service = new TestAsyncServiceImpl(httpclient, executorService);
         //TProcessor tprocessor = new TestAsync.Processor<TestAsync.Iface>(service);
 
         //使用起来简直不要太方便~~~
         TProcessor tAsyncProcessor = new TestAsync.AsyncProcessor<TestAsync.AsyncIface>(service);
         // 传输通道 - 非阻塞方式
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(8420);
-        ExecutorService executorService = Executors.newCachedThreadPool();
+
                 //new ThreadPoolExecutor(16, 256, 60L, TimeUnit.SECONDS,new SynchronousQueue<>());
         //多线程半同步半异步
         TThreadedSelectorServer.Args tArgs = new TThreadedSelectorServer.Args(serverTransport);

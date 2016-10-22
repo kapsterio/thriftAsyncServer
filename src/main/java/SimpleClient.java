@@ -27,7 +27,7 @@ public class SimpleClient {
 
     //基于连接池的多线程同步client
     public static void main(String[] args) throws Exception{
-        List<ServiceInfo> serviceList = Arrays.asList(new ServiceInfo("127.0.0.1", 8420));
+        List<ServiceInfo> serviceList = Arrays.asList(new ServiceInfo("127.0.0.1", 8419));
 
 
         PoolConfig config = new PoolConfig();
