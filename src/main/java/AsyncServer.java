@@ -51,7 +51,7 @@ public class AsyncServer {
                 //new ThreadPoolExecutor(16, 256, 60L, TimeUnit.SECONDS,new SynchronousQueue<>());
         //多线程半同步半异步
         TThreadedSelectorServer.Args tArgs = new TThreadedSelectorServer.Args(serverTransport);
-        tArgs.selectorThreads(4).workerThreads(8)
+        tArgs.selectorThreads(4).executorService(executorService)
                 .acceptQueueSizePerThread(50)
                 .acceptPolicy(TThreadedSelectorServer.Args.AcceptPolicy.FAST_ACCEPT);
         tArgs.processor(tAsyncProcessor);
