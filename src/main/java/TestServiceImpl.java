@@ -14,11 +14,14 @@ public class TestServiceImpl implements TestAsync.Iface {
     CloseableHttpAsyncClient httpclient;
     AtomicInteger errorCount = new AtomicInteger();
     AtomicInteger sucessCount = new AtomicInteger();
+
     public TestServiceImpl(CloseableHttpAsyncClient client) {
         //httpclient = HttpAsyncClients.createDefault();
         this.httpclient = client;
         this.httpclient.start();
     }
+
+
     @Override
     public int size() throws TException {
 

@@ -7,6 +7,7 @@ import org.apache.thrift.async.AsyncMethodCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -17,12 +18,13 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
     CloseableHttpAsyncClient httpclient;
     AtomicInteger errorCount = new AtomicInteger(0);
     AtomicInteger sucessCount = new AtomicInteger(0);
-    //ExecutorService executorService = Executors.newFixedThreadPool(16);
+    ExecutorService executorService;
 
-    public TestAsyncServiceImpl(CloseableHttpAsyncClient client) {
+    public TestAsyncServiceImpl(CloseableHttpAsyncClient client, ExecutorService executorService) {
         //httpclient = HttpAsyncClients.createDefault();
         this.httpclient = client;
         this.httpclient.start();
+        this.executorService = executorService;
     }
     @Override
     public void size(AsyncMethodCallback resultHandler) throws TException {
@@ -31,7 +33,7 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
 
             final HttpGet request2 = new HttpGet("http://open.meituan.com/");
             long begin = System.currentTimeMillis();
-            LOGGER.info("begin: {}", begin);
+            //LOGGER.info("begin: {}", begin);
             httpclient.execute(request2, new FutureCallback<HttpResponse>() {
 
                 public void completed(final HttpResponse response2) {
@@ -41,24 +43,26 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
                         sucessCount.incrementAndGet();
                         resultHandler.onComplete(response2.getStatusLine().getStatusCode());
                     });*/
-                    resultHandler.onComplete(response2.getStatusLine().getStatusCode());
+                    LOGGER.info("take: {}", System.currentTimeMillis() - begin);
+                    executorService.execute(() -> {
+                        resultHandler.onComplete(response2.getStatusLine().getStatusCode());
+                    });
                 }
 
                 public void failed(final Exception ex) {
-                    errorCount.incrementAndGet();
-                    resultHandler.onComplete(-1);
-
-                    System.out.println(request2.getRequestLine() + "->" + ex);
+                    LOGGER.info("take: {}", System.currentTimeMillis() - begin);
+                    executorService.execute(() -> {
+                        errorCount.incrementAndGet();
+                        resultHandler.onComplete(-1);
+                        LOGGER.error("wrong: ", ex);
+                    });
                 }
 
                 public void cancelled() {
-
                     System.out.println(request2.getRequestLine() + " cancelled");
                 }
 
             });
-
-            LOGGER.info("sended: {}", System.currentTimeMillis());
         } catch (Exception e) {
             errorCount.incrementAndGet();
             //System.out.println(e);

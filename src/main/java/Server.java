@@ -5,12 +5,15 @@ import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
+import org.apache.http.pool.PoolStats;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -21,7 +24,9 @@ import java.util.concurrent.TimeUnit;
   Created by zhangheng on 10/21/16.
  */
 public class Server {
+    static Logger log = LoggerFactory.getLogger("Tmonitor");
     public static void main(String[] args) throws Exception{
+
         //CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault();
         RequestConfig requestConfig = RequestConfig.custom()
                 .setSocketTimeout(3000)
@@ -43,6 +48,25 @@ public class Server {
                 .setDefaultRequestConfig(requestConfig)
                 .setConnectionManager(cm)
                 .build();
+
+        Thread monitor = new Thread( () -> {
+            while (true) {
+                PoolStats ps = cm.getTotalStats();
+                log.info("available: {}", ps.getAvailable());
+                log.info("leased: {}" , ps.getLeased());
+                log.info("pending: {}" , ps.getPending());
+                log.info("max: {}" ,ps.getMax());
+                try {
+                    Thread.sleep(10);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+        monitor.setDaemon(true);
+        monitor.start();
+
         TestServiceImpl service = new TestServiceImpl(httpclient);
         TProcessor tprocessor = new TestAsync.Processor<TestAsync.Iface>(service);
         // 传输通道 - 非阻塞方式
