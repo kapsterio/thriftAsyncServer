@@ -7,6 +7,7 @@ import org.apache.thrift.async.AsyncMethodCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,40 +31,35 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
     public void size(AsyncMethodCallback resultHandler) throws TException {
         try {
             // One most likely would want to use a callback for operation result
-
-            final HttpGet request2 = new HttpGet("http://open-in.meituan.com/");
-            long begin = System.currentTimeMillis();
-            //LOGGER.info("begin: {}", begin);
-            httpclient.execute(request2, new FutureCallback<HttpResponse>() {
-
-                public void completed(final HttpResponse response2) {
-                    /*executorService.execute(() -> {
-                        long end = System.currentTimeMillis();
-                        LOGGER.info("completed: {}, take: {}", end, end - begin);
-                        sucessCount.incrementAndGet();
-                        resultHandler.onComplete(response2.getStatusLine().getStatusCode());
-                    });*/
-                    LOGGER.info("take: {}", System.currentTimeMillis() - begin);
-                    resultHandler.onComplete(response2.getStatusLine().getStatusCode());
-
-                }
-
-                public void failed(final Exception ex) {
-                        LOGGER.info("take: {}", System.currentTimeMillis() - begin);
-                        errorCount.incrementAndGet();
-                        resultHandler.onComplete(-1);
-                        LOGGER.error("wrong: ", ex);
-                }
-
-                public void cancelled() {
-                    System.out.println(request2.getRequestLine() + " cancelled");
-                }
-
-            });
+            CompletableFuture<Integer> future1 = getResult();
+            future1.thenCompose(i -> getResult()).thenAccept(j -> resultHandler.onComplete(j));
         } catch (Exception e) {
             errorCount.incrementAndGet();
-            //System.out.println(e);
             e.printStackTrace();
         }
+    }
+
+
+    public CompletableFuture<Integer> getResult() {
+        final HttpGet request = new HttpGet("http://open-in.meituan.com/");
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        httpclient.execute(request, new FutureCallback<HttpResponse>() {
+            @Override
+            public void completed(HttpResponse httpResponse) {
+                future.complete(httpResponse.getStatusLine().getStatusCode());
+            }
+
+            @Override
+            public void failed(Exception e) {
+                errorCount.incrementAndGet();
+                future.complete(-1);
+            }
+
+            @Override
+            public void cancelled() {
+                System.out.println(request.getRequestLine() + " cancelled");
+            }
+        });
+        return future;
     }
 }
