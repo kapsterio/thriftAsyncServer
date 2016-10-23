@@ -31,8 +31,7 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
     public void size(AsyncMethodCallback resultHandler) throws TException {
         try {
             // One most likely would want to use a callback for operation result
-            CompletableFuture<Integer> future1 = getResult();
-            future1.thenCompose(i -> getResult()).thenAccept(j -> resultHandler.onComplete(j));
+            getResult().thenCompose(i -> getResult()).thenAccept(j -> resultHandler.onComplete(j));
         } catch (Exception e) {
             errorCount.incrementAndGet();
             e.printStackTrace();
