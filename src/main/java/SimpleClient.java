@@ -40,7 +40,7 @@ public class SimpleClient {
                 serviceList,
                 transport -> new TestAsync.Client(new TBinaryProtocol(new TFramedTransport(transport))), // ❶
                 config);
-        ExecutorService executor = Executors.newFixedThreadPool(100);
+        ExecutorService executor = Executors.newFixedThreadPool(150);
         int num = 10000;
         CountDownLatch latch = new CountDownLatch(num);
         Map<Integer, Long> allTimes = Maps.newConcurrentMap();

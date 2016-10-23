@@ -15,8 +15,7 @@ import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /*
   Created by zhangheng on 10/21/16.
@@ -38,8 +37,8 @@ public class AsyncServer {
         // Create a custom I/O reactort
         ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
-        cm.setMaxTotal(128);
-        cm.setDefaultMaxPerRoute(128);
+        cm.setMaxTotal(256);
+        cm.setDefaultMaxPerRoute(256);
 
         CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
                 .setDefaultRequestConfig(requestConfig)
@@ -63,7 +62,7 @@ public class AsyncServer {
         });
         monitor.setDaemon(true);
         monitor.start();
-        ExecutorService executorService = Executors.newCachedThreadPool();
+        ExecutorService executorService = Executors.newFixedThreadPool(16);
         TestAsyncServiceImpl service = new TestAsyncServiceImpl(httpclient, executorService);
         //TProcessor tprocessor = new TestAsync.Processor<TestAsync.Iface>(service);
 

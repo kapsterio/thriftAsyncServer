@@ -31,7 +31,7 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
         try {
             // One most likely would want to use a callback for operation result
 
-            final HttpGet request2 = new HttpGet("http://open.meituan.com/");
+            final HttpGet request2 = new HttpGet("http://open-in.meituan.com/");
             long begin = System.currentTimeMillis();
             //LOGGER.info("begin: {}", begin);
             httpclient.execute(request2, new FutureCallback<HttpResponse>() {
@@ -44,18 +44,15 @@ public class TestAsyncServiceImpl implements TestAsync.AsyncIface {
                         resultHandler.onComplete(response2.getStatusLine().getStatusCode());
                     });*/
                     LOGGER.info("take: {}", System.currentTimeMillis() - begin);
-                    executorService.execute(() -> {
-                        resultHandler.onComplete(response2.getStatusLine().getStatusCode());
-                    });
+                    resultHandler.onComplete(response2.getStatusLine().getStatusCode());
+
                 }
 
                 public void failed(final Exception ex) {
-                    LOGGER.info("take: {}", System.currentTimeMillis() - begin);
-                    executorService.execute(() -> {
+                        LOGGER.info("take: {}", System.currentTimeMillis() - begin);
                         errorCount.incrementAndGet();
                         resultHandler.onComplete(-1);
                         LOGGER.error("wrong: ", ex);
-                    });
                 }
 
                 public void cancelled() {

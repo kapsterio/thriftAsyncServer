@@ -15,10 +15,7 @@ import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /*
   Created by zhangheng on 10/21/16.
@@ -42,8 +39,8 @@ public class Server {
         // Create a custom I/O reactort
         ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
-        cm.setMaxTotal(128);
-        cm.setDefaultMaxPerRoute(128);
+        cm.setMaxTotal(256);
+        cm.setDefaultMaxPerRoute(256);
         CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
                 .setDefaultRequestConfig(requestConfig)
                 .setConnectionManager(cm)
@@ -72,7 +69,7 @@ public class Server {
         // 传输通道 - 非阻塞方式
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(8419);
 
-        ExecutorService executorService = new ThreadPoolExecutor(16, 256, 60L, TimeUnit.SECONDS,new SynchronousQueue<>());
+        ExecutorService executorService = Executors.newFixedThreadPool(16);
         //ExecutorService executorService = Executors.newCachedThreadPool();
         //多线程半同步半异步
         TThreadedSelectorServer.Args tArgs = new TThreadedSelectorServer.Args(serverTransport);
