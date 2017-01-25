@@ -1,8 +1,6 @@
 # 背景
 在前面两篇blog中，我结合源码分析了thrift server的实现，以及0.9.1中引入的async processor（见[thrift server](http://kapsterio.github.io/test/2016/07/06/ttheadedselectorserver.html)、[thrift async server](http://kapsterio.github.io/test/2016/10/20/thrift-async-server.html)）。本文将从使用者的角度通过一些简单的例子，介绍下怎么基于TThreadedSelectorServer搭建一个半同步半异步server和一个纯异步server，并在功能和性能方面对二者进行比较。
 
-本文中涉及到的代码都托管在github上，懒得看下面文字啰嗦的同学可以直接去看代码，见这个[repo](https://github.com/kapsterio/thriftAsyncServer)。
-
 ## 简单的service定义
 假设我们现在有这么一个service，它的idl定义如下：
 
